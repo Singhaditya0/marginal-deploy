@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Marginal — Document Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- LEFT: document shelf -->
+    <aside class="shelf">
+      <div class="shelf-header">
+        <h1 class="wordmark">Marginal<span class="wordmark-dot">.</span></h1>
+        <p class="tagline">read closely, ask freely</p>
+      </div>
+
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.md" hidden />
+        <p class="upload-label">Drop a file here</p>
+        <p class="upload-sub">PDF · DOCX · TXT — or</p>
+        <button class="btn-link" id="browseBtn">browse files</button>
+      </div>
+
+      <form class="url-form" id="urlForm">
+        <input type="url" id="urlInput" placeholder="…or add a URL" />
+        <button type="submit" class="btn-icon" aria-label="Add URL">↵</button>
+      </form>
+
+      <button class="btn-link" id="showPasteBtn" style="align-self:flex-start;">or paste text directly</button>
+      <form class="paste-form" id="pasteForm" hidden>
+        <textarea id="pasteInput" placeholder="Paste your document text here…" rows="5"></textarea>
+        <button type="submit" class="btn-primary" style="margin-top:6px;">Add pasted text</button>
+      </form>
+
+      <div class="shelf-list-wrap">
+        <p class="eyebrow">your documents</p>
+        <ul class="shelf-list" id="shelfList">
+          <li class="empty-note">Nothing here yet. Upload a document to begin.</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- CENTER: reading pane -->
+    <main class="reading-pane" id="readingPane">
+      <div class="empty-state" id="emptyState">
+        <p class="empty-glyph">§</p>
+        <p class="empty-title">Select or upload a document</p>
+        <p class="empty-body">Marginal reads the whole thing, gives you the shape of it,<br>then answers whatever you ask — with citations back to the source.</p>
+      </div>
+
+      <div class="doc-view" id="docView" hidden>
+        <header class="doc-view-header">
+          <div>
+            <p class="eyebrow" id="docType">—</p>
+            <h2 class="doc-title" id="docTitle">Untitled</h2>
+          </div>
+          <div class="summary-controls">
+            <select id="summaryStyle" class="style-select">
+              <option value="concise">Concise</option>
+              <option value="detailed">Detailed</option>
+              <option value="bullets">Key points</option>
+            </select>
+            <button class="btn-primary" id="summarizeBtn">Summarize</button>
+          </div>
+        </header>
+
+        <section class="summary-block" id="summaryBlock">
+          <p class="placeholder-text">No summary yet — click <strong>Summarize</strong> above.</p>
+        </section>
+
+        <section class="qa-block">
+          <p class="eyebrow">ask this document</p>
+          <div class="qa-thread" id="qaThread"></div>
+          <form class="qa-form" id="qaForm">
+            <input type="text" id="qaInput" placeholder="What does this document say about…" autocomplete="off" />
+            <button type="submit" class="btn-primary" id="askBtn">Ask</button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <!-- RIGHT: source / citation panel -->
+    <aside class="source-panel" id="sourcePanel">
+      <p class="eyebrow">source excerpts</p>
+      <div class="source-list" id="sourceList">
+        <p class="placeholder-text">Citations from your answers will appear here — click any [n] to jump to it.</p>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
