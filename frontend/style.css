@@ -882,3 +882,64 @@ transform:translateY(0px);
     margin-right:60px;
     animation:fadeUp .3s;
 }
+.similarity-bar{
+    width:100%;
+    height:8px;
+    background:#222;
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:8px;
+}
+
+.similarity-fill{
+    height:100%;
+    background:linear-gradient(90deg,#06B6D4,#8B5CF6);
+    transition:width .8s ease;
+}
+.summary-block,
+.qa-pair,
+.source-card{
+    transition:all .3s ease;
+}
+
+.summary-block:hover,
+.qa-pair:hover,
+.source-card:hover{
+    transform:translateY(-4px);
+}
+body::before{
+    animation:float1 10s ease-in-out infinite;
+}
+
+body::after{
+    animation:float2 12s ease-in-out infinite;
+}
+
+@keyframes float1{
+0%,100%{transform:translateY(0);}
+50%{transform:translateY(30px);}
+}
+
+@keyframes float2{
+0%,100%{transform:translateY(0);}
+50%{transform:translateY(-30px);}
+}
+.btn-primary{
+    position:relative;
+    overflow:hidden;
+}
+
+.btn-primary::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:-100%;
+    width:100%;
+    height:100%;
+    background:rgba(255,255,255,.2);
+    transition:.5s;
+}
+
+.btn-primary:hover::after{
+    left:100%;
+}
