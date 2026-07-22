@@ -1,3 +1,4 @@
+console.log("Testing update");
 const API = "/api";
 
 const state = {
