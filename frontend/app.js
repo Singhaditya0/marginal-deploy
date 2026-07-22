@@ -68,10 +68,21 @@ function renderShelf() {
   state.documents.forEach((doc, i) => {
     const li = document.createElement("li");
     li.className = "shelf-item" + (doc.doc_id === state.activeDocId ? " active" : "");
-    li.innerHTML = `
-      <span class="shelf-item-index">${String(i + 1).padStart(2, "0")}</span>
-      <span class="shelf-item-name" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</span>
-    `;
+    const icon =
+  doc.source_type === "pdf" ? "📕" :
+  doc.source_type === "docx" ? "📘" :
+  doc.source_type === "url" ? "🌐" :
+  "📄";
+
+li.innerHTML = `
+  <span class="shelf-item-index">${String(i + 1).padStart(2, "0")}</span>
+
+  <span class="shelf-item-icon">${icon}</span>
+
+  <span class="shelf-item-name" title="${escapeHtml(doc.name)}">
+    ${escapeHtml(doc.name)}
+  </span>
+`;
     li.addEventListener("click", () => selectDocument(doc.doc_id));
     shelfList.appendChild(li);
   });

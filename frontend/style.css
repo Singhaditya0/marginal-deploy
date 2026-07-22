@@ -734,3 +734,23 @@ padding:14px 18px;
 color:rgba(255,255,255,.45);
 
 }
+.shelf-item-icon{
+    font-size:20px;
+    width:28px;
+    text-align:center;
+}
+
+.shelf-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    transition:all .3s ease;
+}
+
+.shelf-item:hover{
+    transform:translateX(6px);
+}
+
+.shelf-item.active{
+    border-left:4px solid #8B5CF6;
+}
