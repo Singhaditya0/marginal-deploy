@@ -1,81 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Marginal — Document Reader</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marginal AI — Document Summarizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-
   <div class="app">
-
-    <!-- LEFT: document shelf -->
     <aside class="shelf">
       <div class="shelf-header">
-
-    <div class="logo-circle">
-        🧠
-    </div>
-
-    <h1 class="wordmark">
-        Marginal
-        <span class="wordmark-dot">AI</span>
-    </h1>
-        <p class="tagline">read closely, ask freely</p>
+        <div class="logo-circle" aria-hidden="true">🧠</div>
+        <h1 class="wordmark">Marginal <span class="wordmark-dot">AI</span></h1>
+        <p class="tagline">Read closely. Ask clearly.</p>
       </div>
 
-      <div class="upload-zone" id="uploadZone">
-        <div class="upload-icon">
-    📄
-</div>
+      <div class="search-bar" aria-hidden="true" style="display:none;"></div>
 
-<div class="upload-icon">☁️</div>
-
-<h3 class="upload-label">Upload Your Document</h3>
-
-<p class="upload-sub">
-Drag & Drop your file here<br>
-or click below to browse
-</p>
-
-<button class="btn-primary" id="browseBtn">
-📂 Browse Files
-</button>
+      <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Upload a document">
+        <div class="upload-icon" aria-hidden="true">📄</div>
+        <h3 class="upload-label">Upload your document</h3>
+        <p class="upload-sub">Drag &amp; drop a file here or browse from your device.</p>
+        <button type="button" class="btn-primary" id="browseBtn">Browse files</button>
       </div>
+
+      <input id="fileInput" type="file" hidden multiple />
 
       <form class="url-form" id="urlForm">
-        <input type="url" id="urlInput" placeholder="…or add a URL" />
+        <input type="url" id="urlInput" placeholder="Add a URL to summarize" autocomplete="off" />
         <button type="submit" class="btn-icon" aria-label="Add URL">↵</button>
       </form>
 
-      <button class="btn-link" id="showPasteBtn" style="align-self:flex-start;">or paste text directly</button>
+      <button type="button" class="btn-link" id="showPasteBtn">or paste text directly</button>
       <form class="paste-form" id="pasteForm" hidden>
         <textarea id="pasteInput" placeholder="Paste your document text here…" rows="5"></textarea>
-        <button type="submit" class="btn-primary" style="margin-top:6px;">Add pasted text</button>
+        <button type="submit" class="btn-primary">Add pasted text</button>
       </form>
 
       <div class="shelf-list-wrap">
-        <p class="eyebrow">your documents</p>
+        <p class="eyebrow">Your documents</p>
         <ul class="shelf-list" id="shelfList">
           <li class="empty-note">Nothing here yet. Upload a document to begin.</li>
         </ul>
       </div>
     </aside>
 
-    <!-- CENTER: reading pane -->
     <main class="reading-pane" id="readingPane">
-      <div class="empty-state" id="emptyState">
-        <p class="empty-glyph">§</p>
-        <p class="empty-title">Select or upload a document</p>
-        <p class="empty-body">Marginal reads the whole thing, gives you the shape of it,<br>then answers whatever you ask — with citations back to the source.</p>
-      </div>
+      <div class="hero-section">
+
+    <div class="hero-top">
+
+        <h1>✨ Marginal AI</h1>
+
+        <p>
+            Upload documents, generate summaries,
+            and chat with your files using AI.
+        </p>
+
+    </div>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <h2 id="docCount">0</h2>
+            <span>Documents</span>
+        </div>
+
+        <div class="stat-card">
+            <h2 id="chunkCount">0</h2>
+            <span>Chunks</span>
+        </div>
+
+        <div class="stat-card">
+            <h2 id="questionCount">0</h2>
+            <span>Questions</span>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="doc-view" id="docView" hidden>
+
+    <header class="doc-view-header">
+
+        <div>
+            <p class="eyebrow" id="docType"></p>
+            <h2 class="doc-title" id="docTitle"></h2>
+        </div>
+
+        <div class="summary-controls">
+
+            <select id="summaryStyle" class="style-select">
+                <option value="concise">Concise</option>
+                <option value="detailed">Detailed</option>
+                <option value="bullets">Key Points</option>
+            </select>
+
+            <button id="summarizeBtn" class="btn-primary">
+                Summarize
+            </button>
+
+        </div>
+
+    </header>
+
+    <section id="summaryBlock" class="summary-block"></section>
+
+    <section class="qa-block">
+
+        <div id="qaThread" class="qa-thread"></div>
+
+        <form id="qaForm" class="qa-form">
+
+            <input
+                id="qaInput"
+                placeholder="Ask anything about this document..."
+            >
+
+            <button id="askBtn" class="btn-primary">
+                Ask AI
+            </button>
+
+        </form>
+
+    </section>
+
+</div>
 
       <div class="doc-view" id="docView" hidden>
         <header class="doc-view-header">
@@ -83,13 +137,14 @@ or click below to browse
             <p class="eyebrow" id="docType">—</p>
             <h2 class="doc-title" id="docTitle">Untitled</h2>
           </div>
+
           <div class="summary-controls">
             <select id="summaryStyle" class="style-select">
               <option value="concise">Concise</option>
               <option value="detailed">Detailed</option>
               <option value="bullets">Key points</option>
             </select>
-            <button class="btn-primary" id="summarizeBtn">Summarize</button>
+            <button type="button" class="btn-primary" id="summarizeBtn">Summarize</button>
           </div>
         </header>
 
@@ -98,7 +153,7 @@ or click below to browse
         </section>
 
         <section class="qa-block">
-          <p class="eyebrow">ask this document</p>
+          <p class="eyebrow">Ask this document</p>
           <div class="qa-thread" id="qaThread"></div>
           <form class="qa-form" id="qaForm">
             <input type="text" id="qaInput" placeholder="What does this document say about…" autocomplete="off" />
@@ -108,14 +163,12 @@ or click below to browse
       </div>
     </main>
 
-    <!-- RIGHT: source / citation panel -->
     <aside class="source-panel" id="sourcePanel">
-      <p class="eyebrow">source excerpts</p>
+      <p class="eyebrow">Source excerpts</p>
       <div class="source-list" id="sourceList">
         <p class="placeholder-text">Citations from your answers will appear here — click any [n] to jump to it.</p>
       </div>
     </aside>
-
   </div>
 
   <div class="toast" id="toast" hidden></div>

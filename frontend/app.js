@@ -7,6 +7,11 @@ const state = {
 };
 
 // ---------- DOM refs ----------
+const docCount = document.getElementById("docCount");
+const chunkCount = document.getElementById("chunkCount");
+const questionCount = document.getElementById("questionCount");
+
+let totalQuestions = 0;
 const uploadZone   = document.getElementById("uploadZone");
 const fileInput    = document.getElementById("fileInput");
 const browseBtn    = document.getElementById("browseBtn");
@@ -58,6 +63,22 @@ function setLoading(button, loading, loadingText, normalText) {
   button.textContent = loading ? loadingText : normalText;
 }
 
+function animateIn(element) {
+  if (!element) return;
+  element.animate(
+    [
+      { opacity: 0, transform: "translateY(10px)" },
+      { opacity: 1, transform: "translateY(0)" },
+    ],
+    { duration: 280, easing: "ease-out" }
+  );
+}
+
+function scrollThreadToBottom() {
+  if (!qaThread) return;
+  qaThread.scrollTo({ top: qaThread.scrollHeight, behavior: "smooth" });
+}
+
 // ---------- shelf rendering ----------
 function renderShelf() {
   if (state.documents.length === 0) {
@@ -93,6 +114,24 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+function updateStats(){
+
+    if(docCount)
+        docCount.textContent = state.documents.length;
+
+    if(chunkCount){
+
+        const total = state.documents.reduce(
+            (sum,d)=>sum+d.num_chunks,
+            0
+        );
+
+        chunkCount.textContent = total;
+    }
+
+    if(questionCount)
+        questionCount.textContent = totalQuestions;
+}
 
 // ---------- selecting / opening a document ----------
 function selectDocument(docId) {
@@ -102,15 +141,17 @@ function selectDocument(docId) {
 
   emptyState.hidden = true;
   docView.hidden = false;
+  animateIn(docView);
 
   docTitle.textContent = doc.name;
-  docType.textContent = doc.source_type.toUpperCase() + " · " + doc.num_chunks + " chunks";
+  docType.textContent = `${doc.source_type.toUpperCase()} · ${doc.num_chunks} chunks`;
 
   summaryBlock.innerHTML = `<p class="placeholder-text">No summary yet — click <strong>Summarize</strong> above.</p>`;
   qaThread.innerHTML = "";
   sourceList.innerHTML = `<p class="placeholder-text">Citations from your answers will appear here — click any [n] to jump to it.</p>`;
 
   renderShelf();
+  updateStats();
 }
 
 // ---------- upload flow ----------
@@ -128,6 +169,7 @@ async function handleFiles(files) {
         num_chunks: data.num_chunks,
       });
       renderShelf();
+      updateStats();
       selectDocument(data.doc_id);
       showToast(`"${file.name}" is ready.`);
     } catch (err) {
@@ -144,10 +186,19 @@ function guessTypeFromName(name) {
 }
 
 browseBtn.addEventListener("click", () => fileInput.click());
+
 uploadZone.addEventListener("click", (e) => {
   if (e.target === browseBtn) return;
   fileInput.click();
 });
+
+uploadZone.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    fileInput.click();
+  }
+});
+
 fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
 
 ["dragenter", "dragover"].forEach((evt) =>
@@ -186,6 +237,7 @@ urlForm.addEventListener("submit", async (e) => {
     });
     urlInput.value = "";
     renderShelf();
+    updateStats();
     selectDocument(data.doc_id);
     showToast(`Page added.`);
   } catch (err) {
@@ -224,6 +276,7 @@ pasteForm.addEventListener("submit", async (e) => {
     pasteForm.hidden = true;
     showPasteBtn.textContent = "or paste text directly";
     renderShelf();
+    updateStats();
     selectDocument(data.doc_id);
     showToast("Pasted text added.");
   } catch (err) {
@@ -250,17 +303,53 @@ summarizeBtn.addEventListener("click", async () => {
 });
 
 function renderSummary(text) {
+  const safeText = String(text || "").trim();
+
+  if (!safeText) {
+    summaryBlock.innerHTML = `<p class="placeholder-text">No summary yet — click <strong>Summarize</strong> above.</p>`;
+    return;
+  }
+
+  let html = "";
   if (summaryStyle.value === "bullets") {
-    const items = text
+    const items = safeText
       .split("\n")
-      .map((l) => l.replace(/^-\s*/, "").trim())
+      .map((line) => line.replace(/^[-*]\s*/, "").trim())
       .filter(Boolean);
-    summaryBlock.innerHTML = `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`;
+
+    html = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button type="button" class="btn-link summary-copy-btn">Copy summary</button>
+      </div>
+      <ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+    `;
   } else {
-    summaryBlock.innerHTML = text
-      .split("\n\n")
-      .map((p) => `<p>${escapeHtml(p)}</p>`)
-      .join("");
+    html = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button type="button" class="btn-link summary-copy-btn">Copy summary</button>
+      </div>
+      ${safeText
+        .split("\n\n")
+        .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+        .join("")}
+    `;
+  }
+
+  summaryBlock.innerHTML = html;
+  animateIn(summaryBlock);
+
+  const copyBtn = summaryBlock.querySelector(".summary-copy-btn");
+  if (copyBtn && navigator.clipboard) {
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(safeText);
+        showToast("Summary copied.");
+      } catch {
+        showToast("Copy failed in this browser.", true);
+      }
+    });
+  } else if (copyBtn) {
+    copyBtn.addEventListener("click", () => showToast("Clipboard copy is unavailable here.", true));
   }
 }
 
@@ -290,6 +379,9 @@ qaForm.addEventListener("submit", async (e) => {
 });
 
 function appendQaPair(question, answer) {
+  totalQuestions++;
+
+updateStats();
   const wrap = document.createElement("div");
   wrap.className = "qa-pair";
 
@@ -299,18 +391,38 @@ function appendQaPair(question, answer) {
 
   const a = document.createElement("p");
   a.className = "qa-answer";
-  a.innerHTML = linkifyCitations(answer);
 
   wrap.appendChild(q);
   wrap.appendChild(a);
   qaThread.appendChild(wrap);
-  wrap.scrollIntoView({ behavior: "smooth", block: "end" });
+  typeAnswer(a, answer);
+  scrollThreadToBottom();
+}
+
+function typeAnswer(element, text) {
+  const escaped = escapeHtml(text);
+  const answerMarkup = linkifyCitations(escaped);
+  const chars = answerMarkup.split("");
+
+  element.innerHTML = "";
+  let index = 0;
+
+  function tick() {
+    if (index <= chars.length) {
+      element.innerHTML = chars.slice(0, index).join("");
+      index += 1;
+      setTimeout(tick, 14);
+    } else {
+      scrollThreadToBottom();
+    }
+  }
+
+  tick();
 }
 
 // turns "[1]" or "[1][3]" style citations into clickable tags
 function linkifyCitations(text) {
-  const escaped = escapeHtml(text);
-  return escaped.replace(/\[(\d+)\]/g, (match, num) => {
+  return text.replace(/\[(\d+)\]/g, (match, num) => {
     return `<a href="#source-${num}" class="cite-tag" data-cite="${num}">[${num}]</a>`;
   });
 }
@@ -334,19 +446,33 @@ function renderSources(sources) {
     sourceList.innerHTML = `<p class="placeholder-text">No matching passages were found for that question.</p>`;
     return;
   }
+
   sourceList.innerHTML = sources
     .map(
       (s) => `
-      <div class="source-card" id="source-${s.rank}">
-        <div class="source-card-head">
-          <span class="source-card-num">[${s.rank}]</span>
-          <span>similarity ${s.score}</span>
+        <div class="source-card" id="source-${s.rank}">
+          <div class="source-card-head">
+            <span class="source-card-num">[${s.rank}]</span>
+            <span>similarity ${s.score}</span>
+          </div>
+          <button type="button" class="btn-link source-card-toggle">Expand excerpt</button>
+          <div class="source-card-text" style="max-height:92px; overflow:hidden; transition:max-height .25s ease;">
+            ${escapeHtml(truncate(s.text, 320))}
+          </div>
         </div>
-        <div>${escapeHtml(truncate(s.text, 320))}</div>
-      </div>
-    `
+      `
     )
     .join("");
+
+  sourceList.querySelectorAll(".source-card-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const card = btn.closest(".source-card");
+      const text = card.querySelector(".source-card-text");
+      const expanded = card.classList.toggle("is-expanded");
+      btn.textContent = expanded ? "Collapse excerpt" : "Expand excerpt";
+      text.style.maxHeight = expanded ? `${text.scrollHeight}px` : "92px";
+    });
+  });
 }
 
 function truncate(text, max) {
@@ -364,6 +490,7 @@ function truncate(text, max) {
       num_chunks: d.num_chunks,
     }));
     renderShelf();
+    updateStats();
   } catch {
     // backend not reachable yet — shelf just stays empty, no need to alarm the user
   }
