@@ -10,7 +10,7 @@ const state = {
 const docCount = document.getElementById("docCount");
 const chunkCount = document.getElementById("chunkCount");
 const questionCount = document.getElementById("questionCount");
-
+const typingLoader = document.getElementById("typingLoader");
 let totalQuestions = 0;
 const uploadZone   = document.getElementById("uploadZone");
 const fileInput    = document.getElementById("fileInput");
@@ -361,6 +361,7 @@ qaForm.addEventListener("submit", async (e) => {
 
   qaInput.value = "";
   setLoading(askBtn, true, "Asking…", "Ask");
+  typingLoader.hidden = false;
 
   try {
     const data = await apiCall(`/documents/${state.activeDocId}/ask`, {
@@ -374,6 +375,7 @@ qaForm.addEventListener("submit", async (e) => {
   } catch (err) {
     showToast(err.message, true);
   } finally {
+    typingLoader.hidden = true;
     setLoading(askBtn, false, "Asking…", "Ask");
   }
 });
