@@ -1,0 +1,24 @@
+{
+  "name": "doc-summarizer-deploy",
+  "version": "1.0.0",
+  "description": "This is a cloud-ready variant of your Marginal project, modified so it runs entirely on **free** infrastructure — $0/month, no credit card, anywhere.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Singhaditya0/marginal-deploy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Singhaditya0/marginal-deploy/issues"
+  },
+  "homepage": "https://github.com/Singhaditya0/marginal-deploy#readme",
+  "devDependencies": {
+    "tailwindcss": "^4.3.3"
+  }
+}
