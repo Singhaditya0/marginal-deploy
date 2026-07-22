@@ -803,3 +803,28 @@ color:rgba(255,255,255,.45);
     font-size:14px;
 
 }
+.upload-icon{
+    font-size:60px;
+    margin-bottom:15px;
+}
+
+.upload-zone{
+    text-align:center;
+}
+
+.upload-label{
+    font-size:22px;
+    font-weight:700;
+    color:white;
+    margin-bottom:10px;
+}
+
+.upload-sub{
+    color:#CBD5E1;
+    margin-bottom:20px;
+    line-height:1.6;
+}
+
+.upload-zone .btn-primary{
+    width:100%;
+}
