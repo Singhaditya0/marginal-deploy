@@ -611,3 +611,127 @@ to{
 }
 
 }
+
+/* ===========================
+   Chat Style
+=========================== */
+
+.qa-thread{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:20px;
+
+}
+
+
+.qa-pair{
+
+    border:none;
+
+    padding:20px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.05);
+
+    backdrop-filter:blur(15px);
+
+    animation:fadeUp .45s ease;
+
+}
+
+.qa-question{
+
+    color:#60A5FA;
+
+    font-weight:700;
+
+    font-size:17px;
+
+    margin-bottom:14px;
+
+}
+
+
+.qa-question::before{
+
+content:"👤 ";
+
+}
+
+.qa-answer{
+
+    color:white;
+
+    line-height:1.8;
+
+}
+
+
+.qa-answer::before{
+
+content:"🤖 ";
+
+}
+
+.cite-tag{
+
+background:#8B5CF6;
+
+color:white;
+
+padding:4px 8px;
+
+border-radius:8px;
+
+text-decoration:none;
+
+font-size:12px;
+
+transition:.3s;
+
+}
+
+.cite-tag:hover{
+
+background:#6366F1;
+
+transform:scale(1.08);
+
+}
+
+.qa-form{
+
+margin-top:30px;
+
+display:flex;
+
+gap:12px;
+
+}
+
+
+.qa-form input{
+
+background:rgba(255,255,255,.08);
+
+border:1px solid rgba(255,255,255,.15);
+
+color:white;
+
+border-radius:14px;
+
+padding:14px 18px;
+
+}
+
+
+.qa-form input::placeholder{
+
+color:rgba(255,255,255,.45);
+
+}
+
