@@ -455,7 +455,11 @@ function renderSources(sources) {
         <div class="source-card" id="source-${s.rank}">
           <div class="source-card-head">
             <span class="source-card-num">[${s.rank}]</span>
-            <span>similarity ${s.score}</span>
+            <div class="similarity-bar">
+    <div class="similarity-fill"
+         style="width:${Math.min(s.score*100,100)}%">
+    </div>
+</div>
           </div>
           <button type="button" class="btn-link source-card-toggle">Expand excerpt</button>
           <div class="source-card-text" style="max-height:92px; overflow:hidden; transition:max-height .25s ease;">

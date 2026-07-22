@@ -864,3 +864,21 @@ transform:translateY(0px);
         opacity:1;
     }
 }
+.user-message{
+    background:linear-gradient(135deg,#4F46E5,#7C3AED);
+    color:white;
+    padding:16px;
+    border-radius:18px 18px 4px 18px;
+    margin-bottom:15px;
+    margin-left:60px;
+    animation:fadeUp .3s;
+}
+
+.ai-message{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);
+    padding:16px;
+    border-radius:18px 18px 18px 4px;
+    margin-right:60px;
+    animation:fadeUp .3s;
+}
