@@ -371,3 +371,41 @@ function truncate(text, max) {
     // backend not reachable yet — shelf just stays empty, no need to alarm the user
   }
 })();
+
+// ---------- installable app ----------
+// Registers the service worker (required by browsers before they'll offer
+// an install/download prompt) and wires up the "Install app" button that
+// shows once the browser decides the site qualifies.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Install still works without this — the shell just won't be
+      // cached for offline use.
+    });
+  });
+}
+
+const installBtn = document.getElementById("installBtn");
+let deferredInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  installBtn.hidden = false;
+});
+
+installBtn?.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  installBtn.hidden = true;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  if (outcome === "accepted") {
+    showToast("Marginal is installing…");
+  }
+});
+
+window.addEventListener("appinstalled", () => {
+  installBtn.hidden = true;
+  deferredInstallPrompt = null;
+});

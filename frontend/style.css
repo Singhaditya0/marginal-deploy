@@ -187,6 +187,26 @@ button, input, select, textarea {
   text-align: center;
 }
 
+.btn-install {
+  display: block;
+  margin: 14px auto 0;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-line);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
+  animation: fadeUp .3s var(--ease);
+}
+.btn-install:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-3);
+  transform: translateY(-1px);
+}
+
 .upload-zone {
   background: var(--glass-strong);
   border: 2px dashed rgba(139, 92, 246, 0.7);

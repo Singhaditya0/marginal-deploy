@@ -9,6 +9,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- Installable web app -->
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" href="/static/icons/favicon-32.png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Marginal" />
+
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -21,6 +29,7 @@
         <div class="logo-circle">🧠</div>
         <h1 class="wordmark">Marginal<span class="wordmark-dot">AI</span></h1>
         <p class="tagline">read closely, ask freely</p>
+        <button class="btn-install" id="installBtn" hidden>⬇ Install app</button>
       </div>
 
       <div class="upload-zone" id="uploadZone">
