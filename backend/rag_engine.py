@@ -82,30 +82,52 @@ class DocumentIndex:
 
 
 class DocumentStore:
-    """In-memory registry of all uploaded documents, keyed by doc_id."""
+    """
+    In-memory registry of all uploaded documents, keyed by doc_id.
+
+    Every document is tagged with the session_id that uploaded it (see
+    main.py's session-cookie dependency). All read/write access goes
+    through that session_id so one browser/device never sees or touches
+    another session's documents, even though everything lives in the same
+    process-wide dictionaries.
+    """
 
     def __init__(self):
         self._indexes: Dict[str, DocumentIndex] = {}
         self._metadata: Dict[str, dict] = {}
+        self._owners: Dict[str, str] = {}  # doc_id -> session_id
 
-    def add_document(self, doc_id: str, chunks: List[str], metadata: dict):
+    def add_document(self, doc_id: str, chunks: List[str], metadata: dict, session_id: str):
         self._indexes[doc_id] = DocumentIndex(chunks)
         self._metadata[doc_id] = metadata
+        self._owners[doc_id] = session_id
 
-    def get_index(self, doc_id: str) -> DocumentIndex:
-        if doc_id not in self._indexes:
+    def is_owner(self, doc_id: str, session_id: str) -> bool:
+        return self._owners.get(doc_id) == session_id
+
+    def get_index(self, doc_id: str, session_id: str) -> DocumentIndex:
+        if not self.is_owner(doc_id, session_id):
             raise KeyError(f"No document found with id {doc_id}")
         return self._indexes[doc_id]
 
-    def get_metadata(self, doc_id: str) -> dict:
+    def get_metadata(self, doc_id: str, session_id: str) -> dict:
+        if not self.is_owner(doc_id, session_id):
+            return {}
         return self._metadata.get(doc_id, {})
 
-    def list_documents(self) -> List[dict]:
-        return [{"doc_id": doc_id, **meta} for doc_id, meta in self._metadata.items()]
+    def list_documents(self, session_id: str) -> List[dict]:
+        return [
+            {"doc_id": doc_id, **meta}
+            for doc_id, meta in self._metadata.items()
+            if self._owners.get(doc_id) == session_id
+        ]
 
-    def delete_document(self, doc_id: str):
+    def delete_document(self, doc_id: str, session_id: str):
+        if not self.is_owner(doc_id, session_id):
+            return
         self._indexes.pop(doc_id, None)
         self._metadata.pop(doc_id, None)
+        self._owners.pop(doc_id, None)
 
 
 store = DocumentStore()
