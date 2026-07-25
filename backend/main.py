@@ -234,3 +234,13 @@ async def service_worker():
     # Served from the root (not /static/sw.js) so its default scope is "/"
     # and it can control the whole app, not just the /static/ subtree.
     return FileResponse(str(FRONTEND_DIR / "sw.js"), media_type="application/javascript")
+
+
+@app.get("/robots.txt")
+async def robots():
+    return FileResponse(str(FRONTEND_DIR / "robots.txt"), media_type="text/plain")
+
+
+@app.get("/sitemap.xml")
+async def sitemap():
+    return FileResponse(str(FRONTEND_DIR / "sitemap.xml"), media_type="application/xml")
