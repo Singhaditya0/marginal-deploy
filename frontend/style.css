@@ -396,6 +396,13 @@ button, input, select, textarea {
   color: var(--ink);
   cursor: pointer;
 }
+/* The dropdown list itself is rendered by the OS/browser, not by our
+   glass styling — give it an explicit dark background so the light
+   text stays readable when the list is open. */
+.style-select option {
+  background: var(--bg-2);
+  color: var(--ink);
+}
 
 .btn-primary {
   background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
