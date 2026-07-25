@@ -201,6 +201,9 @@ button, input, select, textarea {
   transition: transform .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
   animation: fadeUp .3s var(--ease);
 }
+.btn-install[hidden] {
+  display: none;
+}
 .btn-install:hover {
   background: var(--accent-soft);
   border-color: var(--accent-3);
