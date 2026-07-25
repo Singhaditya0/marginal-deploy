@@ -8,7 +8,10 @@ and retrieval.
 
 import re
 import io
+import socket
+import ipaddress
 from typing import List
+from urllib.parse import urlparse
 
 import pdfplumber
 import docx
@@ -56,10 +59,70 @@ def extract_text_from_txt(file_bytes: bytes) -> str:
     raise DocumentProcessorError("Could not decode text file (unsupported encoding).")
 
 
+# ---------- SSRF protection for the "add by URL" feature ----------
+# The server itself fetches whatever URL the user gives it. Without checks,
+# someone could point it at http://localhost/..., an internal service on
+# the hosting provider's private network, or a cloud metadata endpoint
+# (e.g. 169.254.169.254) and use the server as a proxy to reach things it
+# should never be able to reach. _is_safe_url resolves the hostname and
+# rejects anything that isn't a normal public address.
+def _is_safe_url(url: str) -> bool:
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
+
+    hostname = parsed.hostname
+    if not hostname:
+        return False
+    if hostname.lower() in ("localhost", "0.0.0.0"):
+        return False
+
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False
+
+    if not resolved:
+        return False
+
+    for family, _type, _proto, _canon, sockaddr in resolved:
+        ip_str = sockaddr[0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        ):
+            return False
+
+    return True
+
+
 def extract_text_from_url(url: str) -> str:
+    if not _is_safe_url(url):
+        raise DocumentProcessorError(
+            "This URL can't be fetched — it points to a local or private address, "
+            "which isn't allowed for security reasons."
+        )
+
     try:
         headers = {"User-Agent": "Mozilla/5.0 (DocSummarizer/1.0)"}
-        response = requests.get(url, headers=headers, timeout=15)
+        # Redirects are not followed: a safe URL could redirect to an unsafe
+        # one, which would bypass the check above. If a real article link
+        # ever 30x's, the fix is to re-validate the redirect target before
+        # following it — not to follow blindly.
+        response = requests.get(url, headers=headers, timeout=15, allow_redirects=False)
+        if response.is_redirect or response.status_code in (301, 302, 303, 307, 308):
+            raise DocumentProcessorError(
+                "This URL redirects to another address, which isn't followed for security reasons. "
+                "Try pasting the final destination URL directly."
+            )
         response.raise_for_status()
     except requests.RequestException as exc:
         raise DocumentProcessorError(f"Could not fetch URL: {exc}") from exc

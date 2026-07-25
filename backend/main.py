@@ -8,9 +8,17 @@ Privacy note: documents are isolated per-browser using a session cookie
 (see get_session_id below). There is no login — this just stops one
 device/browser from seeing another device's uploads, since everything is
 still held in a single in-memory store on the server.
+
+Security note: this is a small student project, not a hardened production
+service, but a few basic protections are included since it's on the public
+internet: a per-session request rate limit, an upload size cap, an SSRF
+guard on the "add by URL" feature (see document_processor.py), and a CORS
+allow-list instead of a wildcard.
 """
 
+import time
 import uuid
+from collections import defaultdict, deque
 from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Response, Depends
@@ -25,9 +33,18 @@ from llm_service import summarize, answer_question, LLMServiceError
 
 app = FastAPI(title="Intelligent Document Summarizer")
 
+# CORS: the frontend is served from the same origin as the API (FastAPI
+# serves both), so cross-origin requests aren't actually needed for the
+# app to work. Restricting this to known origins (rather than "*") means a
+# script running on some other website can't quietly call this API using
+# a visitor's session cookie in the background.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://marginal-deploy.onrender.com",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -37,6 +54,13 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 # In-memory cache of full document text, keyed by doc_id, so /summarize
 # doesn't need to re-fetch anything and the source panel can show full text.
 _full_text_cache: dict[str, str] = {}
+
+# ---------- upload limits ----------
+# Render's free tier has 512MB of RAM total for the whole app, so one huge
+# upload could crash the instance for everyone. These caps keep any single
+# request small enough to be safe.
+MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024   # 15 MB per uploaded file
+MAX_PASTED_TEXT_CHARS = 2_000_000        # ~2 MB of pasted text
 
 # ---------- session handling ----------
 # No login system — just a random ID stored in a cookie so each browser
@@ -61,6 +85,30 @@ def get_session_id(request: Request, response: Response) -> str:
     return session_id
 
 
+# ---------- rate limiting ----------
+# A simple in-memory sliding window per session, applied to the
+# expensive/abusable endpoints (uploads, summarize, ask). This isn't meant
+# to stop a determined attacker — it just stops a runaway script or bug
+# from burning through the free Groq quota or overloading the free Render
+# instance. Resets whenever the server restarts, same as everything else
+# that's in-memory here.
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_MAX_REQUESTS = 20
+
+_rate_limit_log: dict[str, deque] = defaultdict(deque)
+
+
+def enforce_rate_limit(session_id: str = Depends(get_session_id)) -> str:
+    now = time.time()
+    log = _rate_limit_log[session_id]
+    while log and now - log[0] > RATE_LIMIT_WINDOW_SECONDS:
+        log.popleft()
+    if len(log) >= RATE_LIMIT_MAX_REQUESTS:
+        raise HTTPException(429, "Too many requests — please wait a moment and try again.")
+    log.append(now)
+    return session_id
+
+
 class AskRequest(BaseModel):
     question: str
     top_k: int = 5
@@ -80,7 +128,7 @@ class TextUploadRequest(BaseModel):
 
 
 @app.post("/api/upload/file")
-async def upload_file(file: UploadFile = File(...), session_id: str = Depends(get_session_id)):
+async def upload_file(file: UploadFile = File(...), session_id: str = Depends(enforce_rate_limit)):
     filename = file.filename or "document"
     suffix = Path(filename).suffix.lower().lstrip(".")
 
@@ -92,6 +140,8 @@ async def upload_file(file: UploadFile = File(...), session_id: str = Depends(ge
     raw_bytes = await file.read()
     if not raw_bytes:
         raise HTTPException(400, "Uploaded file is empty.")
+    if len(raw_bytes) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(413, f"File is too large. The limit is {MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB.")
 
     try:
         chunks, full_text = process_document(source_type, raw_bytes)
@@ -116,7 +166,7 @@ async def upload_file(file: UploadFile = File(...), session_id: str = Depends(ge
 
 
 @app.post("/api/upload/url")
-async def upload_url(payload: UrlUploadRequest, session_id: str = Depends(get_session_id)):
+async def upload_url(payload: UrlUploadRequest, session_id: str = Depends(enforce_rate_limit)):
     try:
         chunks, full_text = process_document("url", payload.url)
     except DocumentProcessorError as exc:
@@ -141,9 +191,11 @@ async def upload_url(payload: UrlUploadRequest, session_id: str = Depends(get_se
 
 
 @app.post("/api/upload/text")
-async def upload_text(payload: TextUploadRequest, session_id: str = Depends(get_session_id)):
+async def upload_text(payload: TextUploadRequest, session_id: str = Depends(enforce_rate_limit)):
     if not payload.text.strip():
         raise HTTPException(400, "Pasted text is empty.")
+    if len(payload.text) > MAX_PASTED_TEXT_CHARS:
+        raise HTTPException(413, "Pasted text is too long.")
 
     try:
         chunks, full_text = process_document("text", payload.text)
@@ -189,7 +241,7 @@ async def delete_document(doc_id: str, session_id: str = Depends(get_session_id)
 
 
 @app.post("/api/documents/{doc_id}/summarize")
-async def summarize_document(doc_id: str, payload: SummarizeRequest, session_id: str = Depends(get_session_id)):
+async def summarize_document(doc_id: str, payload: SummarizeRequest, session_id: str = Depends(enforce_rate_limit)):
     if not store.is_owner(doc_id, session_id) or doc_id not in _full_text_cache:
         raise HTTPException(404, "Document not found.")
     try:
@@ -200,7 +252,7 @@ async def summarize_document(doc_id: str, payload: SummarizeRequest, session_id:
 
 
 @app.post("/api/documents/{doc_id}/ask")
-async def ask_document(doc_id: str, payload: AskRequest, session_id: str = Depends(get_session_id)):
+async def ask_document(doc_id: str, payload: AskRequest, session_id: str = Depends(enforce_rate_limit)):
     try:
         index = store.get_index(doc_id, session_id)
     except KeyError as exc:
