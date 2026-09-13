@@ -109,7 +109,7 @@ function selectDocument(docId) {
 
   summaryBlock.innerHTML = `<p class="placeholder-text">No summary yet — click <strong>Summarize</strong> above.</p>`;
   qaThread.innerHTML = "";
-  sourceList.innerHTML = `<p class="placeholder-text">Citations from your answers will appear here — click any [n] to jump to it.</p>`;
+  sourceList.innerHTML = `<p class="placeholder-text">Passages used to answer your questions will appear here.</p>`;
 
   renderShelf();
 }
@@ -300,36 +300,14 @@ function appendQaPair(question, answer) {
 
   const a = document.createElement("p");
   a.className = "qa-answer";
-  a.innerHTML = linkifyCitations(answer);
+  // Plain, full answer text — no citation tags or markers.
+  a.innerHTML = escapeHtml(answer).replace(/\n/g, "<br>");
 
   wrap.appendChild(q);
   wrap.appendChild(a);
   qaThread.appendChild(wrap);
   wrap.scrollIntoView({ behavior: "smooth", block: "end" });
 }
-
-// turns "[1]" or "[1][3]" style citations into clickable tags
-function linkifyCitations(text) {
-  const escaped = escapeHtml(text);
-  return escaped.replace(/\[(\d+)\]/g, (match, num) => {
-    return `<a href="#source-${num}" class="cite-tag" data-cite="${num}">[${num}]</a>`;
-  });
-}
-
-qaThread.addEventListener("click", (e) => {
-  const tag = e.target.closest(".cite-tag");
-  if (!tag) return;
-  e.preventDefault();
-  const num = tag.dataset.cite;
-  const card = document.getElementById(`source-${num}`);
-  if (card) {
-    card.scrollIntoView({ behavior: "smooth", block: "center" });
-    card.classList.remove("flash");
-    void card.offsetWidth; // restart the flash animation even if it just played
-    card.classList.add("flash");
-    setTimeout(() => card.classList.remove("flash"), 1400);
-  }
-});
 
 // ---------- source panel ----------
 function renderSources(sources) {
@@ -340,9 +318,8 @@ function renderSources(sources) {
   sourceList.innerHTML = sources
     .map(
       (s) => `
-      <div class="source-card" id="source-${s.rank}">
+      <div class="source-card">
         <div class="source-card-head">
-          <span class="source-card-num">[${s.rank}]</span>
           <span>similarity ${s.score}</span>
         </div>
         <div>${escapeHtml(truncate(s.text, 320))}</div>

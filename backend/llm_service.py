@@ -94,15 +94,12 @@ def answer_question(question: str, retrieved_chunks: List[Tuple[str, float, int]
     if not retrieved_chunks:
         return "I couldn't find anything relevant to that question in the document."
 
-    context_blocks = []
-    for i, (chunk, _score, _idx) in enumerate(retrieved_chunks, start=1):
-        context_blocks.append(f"[{i}] {chunk}")
+    context_blocks = [chunk for chunk, _score, _idx in retrieved_chunks]
     context_text = "\n\n".join(context_blocks)
 
     prompt = (
-        "Answer the question using ONLY the numbered excerpts below. "
-        "Cite the excerpt number(s) you used in square brackets, like [1] or [1][3], "
-        "right after the relevant sentence. "
+        "Answer the question using ONLY the excerpts below, in clear, complete, well-organized prose. "
+        "Do not add citation numbers, brackets, or reference markers of any kind — just write the full answer naturally. "
         "If the excerpts don't contain the answer, say so honestly instead of guessing.\n\n"
         f"EXCERPTS:\n{context_text}\n\n"
         f"QUESTION: {question}\n\nANSWER:"
