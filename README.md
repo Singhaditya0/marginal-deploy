@@ -49,7 +49,7 @@ Render deploys from a Git repository.
    - **Instance Type:** Free
 5. Under **Environment Variables**, add:
    - `GROQ_API_KEY` = *(paste the key from Step 1)*
-   - `GROQ_MODEL` = `llama-3.1-8b-instant` (optional — this is the default)
+   - `GROQ_MODEL` = `openai/gpt-oss-20b` (optional — this is the default)
 6. Click **Create Web Service**
 
 Render will build and deploy — takes 2-5 minutes the first time. You'll get
